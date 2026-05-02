@@ -12,6 +12,7 @@ public class Printer : MonoBehaviour, IInteractable
 
     [Header("Sound")]
     [SerializeField] private AudioClip printSound;       // Yazıcı sesi
+    [SerializeField] [Range(0f, 1f)] private float printSoundVol = 0.5f;
 
     private bool isUsed = false;
 
@@ -31,7 +32,7 @@ public class Printer : MonoBehaviour, IInteractable
         player.AddItem(itemId);
 
         // Yazıcı sesi çal
-        SFXManager.Play(printSound, transform.position);
+        SFXManager.Play(printSound, transform.position, printSoundVol);
 
         Debug.Log("[Printer] Evrak alındı.");
 

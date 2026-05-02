@@ -164,6 +164,9 @@ public class DialogueSystem : MonoBehaviour
             player.SetCanMove(false);
         }
 
+        // Müziği kıs
+        if (MusicManager.Instance != null) MusicManager.Instance.DuckVolume();
+
         ShowNextLine();
     }
 
@@ -212,6 +215,9 @@ public class DialogueSystem : MonoBehaviour
         {
             player.SetCanMove(true);
         }
+
+        // Müziği normale döndür
+        if (MusicManager.Instance != null) MusicManager.Instance.RestoreVolume();
 
         OnDialogueEnded?.Invoke();
 

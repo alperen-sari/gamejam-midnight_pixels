@@ -1,21 +1,22 @@
 using UnityEngine;
 
 /// <summary>
-/// Çöp kutusu. Evrak varsa atabilirsin (rutin kırma).
-/// Animasyon yok, direkt çalışır.
-/// Güven düşer, kırılma artar.
+/// Çöp kutusu. Evrak varsa buruşturma mini-game'i tetikler.
+/// Mini-game başarılı → çöpe gider, güven düşer, kırılma artar.
+/// Gün 1'de kilitli (rutin kırılamaz).
 /// </summary>
 public class TrashCan : MonoBehaviour, IInteractable
 {
     [Header("Settings")]
-    [SerializeField] private string targetItem = "evrak";       // Atılacak eşya
+    [SerializeField] private string targetItem = "evrak";
 
     [Header("Impact")]
     [SerializeField] private float trustLoss = 15f;
     [SerializeField] private float fractureGain = 12f;
 
     [Header("Sound")]
-    [SerializeField] private AudioClip trashSound;       // Buruşturma sesi
+    [SerializeField] private AudioClip trashSound;
+    [SerializeField] [Range(0f, 1f)] private float trashSoundVol = 0.6f;
 
     public void Interact(Player player)
     {
@@ -23,22 +24,17 @@ public class TrashCan : MonoBehaviour, IInteractable
 
         if (player.HasItem(targetItem))
         {
-            // Seçenek sun
             if (ChoiceUI.Instance != null)
             {
                 ChoiceUI.Instance.ShowChoices(
-                    ("Evrakı Çöpe At", () => ThrowAway(player)),
+                    ("Evrakı Buruştur ve At", () => StartCrumple(player)),
                     ("Vazgeç", () => { })
                 );
             }
             else
             {
-                ThrowAway(player);
+                StartCrumple(player);
             }
-        }
-        else
-        {
-            Debug.Log("[TrashCan] Atacak bir şeyin yok.");
         }
     }
 
@@ -49,12 +45,11 @@ public class TrashCan : MonoBehaviour, IInteractable
         {
             return "[E] Çöpe At";
         }
-        return ""; // Elinde eşya yoksa prompt gösterme
+        return "";
     }
 
     public bool CanInteract()
     {
-        // Gün 1'de çöp kutusu kilitli (rutin kıramazsın)
         int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
         if (day <= 1) return false;
 
@@ -62,23 +57,44 @@ public class TrashCan : MonoBehaviour, IInteractable
         return player != null && player.HasItem(targetItem);
     }
 
-    private void ThrowAway(Player player)
+    private void StartCrumple(Player player)
+    {
+        // CrumpleMiniGame varsa mini-game başlat
+        if (CrumpleMiniGame.Instance != null)
+        {
+            CrumpleMiniGame.Instance.StartGame((success) =>
+            {
+                if (success)
+                {
+                    FinishThrowAway(player);
+                }
+                else
+                {
+                    // İptal — hiçbir şey olmuyor
+                    Debug.Log("[TrashCan] Buruşturma iptal edildi.");
+                }
+            });
+        }
+        else
+        {
+            // Mini-game yoksa direkt at
+            FinishThrowAway(player);
+        }
+    }
+
+    private void FinishThrowAway(Player player)
     {
         player.RemoveItem(targetItem);
-
-        // Buruşturma sesi
-        SFXManager.Play(trashSound, transform.position);
+        SFXManager.Play(trashSound, transform.position, trashSoundVol);
 
         Debug.Log($"[TrashCan] {targetItem} çöpe atıldı!");
 
-        // Güven düşür + kırılma artır
         if (GameManager.Instance != null)
         {
             GameManager.Instance.ReduceBossTrust(trustLoss);
             GameManager.Instance.AddFracture(fractureGain);
         }
 
-        // Diyalog
         if (DialogueSystem.Instance != null)
         {
             DialogueSystem.Instance.StartDialogue(new DialogueLine[]

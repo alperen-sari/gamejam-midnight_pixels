@@ -18,7 +18,9 @@ public class CoffeeMaker : MonoBehaviour, IInteractable
 
     [Header("Sound")]
     [SerializeField] private AudioClip takeCoffeeSound;       // Kahve alma sesi
+    [SerializeField] [Range(0f, 1f)] private float takeCoffeeVol = 0.5f;
     [SerializeField] private AudioClip drinkCoffeeSound;      // Kahve içme sesi
+    [SerializeField] [Range(0f, 1f)] private float drinkCoffeeVol = 0.5f;
 
     private bool isUsed = false; // Bu gün kullanıldı mı?
 

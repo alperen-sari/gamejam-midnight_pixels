@@ -13,6 +13,7 @@ public class Player : MonoBehaviour
 
     [Header("Sound")]
     [SerializeField] private AudioClip footstepClip;      // Yürüme sesi (loop)
+    [SerializeField] [Range(0f, 1f)] private float footstepVolume = 0.3f;
 
     private Rigidbody2D rb;
     private Animator animator;
@@ -47,7 +48,7 @@ public class Player : MonoBehaviour
         footstepSource.clip = footstepClip;
         footstepSource.loop = true;
         footstepSource.playOnAwake = false;
-        footstepSource.volume = 0.4f;
+        footstepSource.volume = footstepVolume;
     }
 
     void Update()
@@ -173,7 +174,19 @@ public class Player : MonoBehaviour
         canMove = value;
         if (!canMove)
         {
-            rb.linearVelocity = Vector2.zero;
+            // Tüm hareket durumunu sıfırla
+            moveInput = Vector2.zero;
+            isSprinting = false;
+            if (rb != null) rb.linearVelocity = Vector2.zero;
+
+            // Animatörü idle'a çek
+            if (animator != null) animator.SetFloat(AnimSpeed, 0f);
+
+            // Yürüme sesini durdur
+            if (footstepSource != null && footstepSource.isPlaying)
+            {
+                footstepSource.Stop();
+            }
         }
     }
 

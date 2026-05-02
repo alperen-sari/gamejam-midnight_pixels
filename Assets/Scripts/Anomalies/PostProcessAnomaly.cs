@@ -20,7 +20,13 @@ public class PostProcessAnomaly : MonoBehaviour
 
     [Header("Transition")]
     [SerializeField] private float transitionSpeed = 2f;
-    [SerializeField] private float slamSpeed = 8f;           // İsyan anı hızlı geçiş
+    [SerializeField] private float slamSpeed = 8f;
+
+    [Header("Sound")]
+    [SerializeField] private AudioClip rebellionEffectSound;    // Efekt değişirken çalan ses
+    [SerializeField] private AudioClip ambientGlitchSound;     // Periyodik glitch sesi
+    [SerializeField] private int ambientGlitchCount = 3;       // İsyan sonrası kaç kez çalsın
+    [SerializeField] private float ambientGlitchInterval = 4f; // Kaç saniyede bir
 
     // ==================== LENS DISTORTION ====================
     [Header("Lens Distortion")]
@@ -80,6 +86,7 @@ public class PostProcessAnomaly : MonoBehaviour
     private float targetBloom = 1.5f;
 
     private float currentSpeed;
+    private Coroutine ambientCoroutine;
 
     void Awake()
     {
@@ -184,15 +191,31 @@ public class PostProcessAnomaly : MonoBehaviour
     /// </summary>
     public void OnRebellion(int rebellionNumber)
     {
-        // Hızlı geçiş modu
         currentSpeed = slamSpeed;
         UpdateTargetsForCurrentState();
+
+        // Efekt değişim sesi
+        SFXManager.Play2D(rebellionEffectSound, 0.6f);
 
         // İlk isyanda lens distortion ani sıçrama
         if (rebellionNumber == 1 && lensDistortion != null)
         {
             lensDistortion.intensity.value = targetLD * 1.5f;
         }
+
+        // Periyodik ambient glitch sesleri başlat
+        if (ambientCoroutine != null) StopCoroutine(ambientCoroutine);
+        ambientCoroutine = StartCoroutine(PlayAmbientGlitches());
+    }
+
+    private System.Collections.IEnumerator PlayAmbientGlitches()
+    {
+        for (int i = 0; i < ambientGlitchCount; i++)
+        {
+            yield return new WaitForSeconds(ambientGlitchInterval + Random.Range(-1f, 1f));
+            SFXManager.Play2D(ambientGlitchSound, 0.3f + Random.Range(0f, 0.2f));
+        }
+        ambientCoroutine = null;
     }
 
     // ==================== Hedef Hesaplama ====================

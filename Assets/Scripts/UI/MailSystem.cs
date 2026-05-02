@@ -19,6 +19,11 @@ public class MailSystem : MonoBehaviour
     [SerializeField] private Color textColor = Color.white;
     [SerializeField] private Color deleteColor = new Color(0.9f, 0.25f, 0.25f);
 
+    [Header("Sound")]
+    [SerializeField] private AudioClip deleteSound;           // Mail silme sesi (loop)
+    [SerializeField] [Range(0f, 1f)] private float deleteVolume = 0.5f;
+    private AudioSource deleteSource;
+
     private GameObject mailCanvas;
     private GameObject panelObj;
     private TextMeshProUGUI fromText;
@@ -229,31 +234,55 @@ public class MailSystem : MonoBehaviour
         MailData mail = currentMails[currentMailIndex];
         Debug.Log($"[MailSystem] Mail silindi: {mail.Subject}");
 
-        // Kırılma artır
+        // Silme sesini başlat
+        StartDeleteSound();
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.AddFracture(5f);
             GameManager.Instance.ReduceBossTrust(3f);
         }
 
-        // Silinen mailin yerine glitch metin koy
         bodyText.text = "<color=#FF3333>[ M A İ L   S İ L İ N D İ ]</color>\n\n...geri alamazsın.";
         subjectText.text = "<s>" + mail.Subject + "</s>";
 
-        // Kısa bekleme sonrası sonraki maile geç
         StartCoroutine(WaitAndNext());
     }
 
     private System.Collections.IEnumerator WaitAndNext()
     {
         yield return new WaitForSeconds(1f);
+        StopDeleteSound();
         currentMailIndex++;
         ShowCurrentMail();
+    }
+
+    private void StartDeleteSound()
+    {
+        if (deleteSound == null) return;
+        if (deleteSource == null)
+        {
+            deleteSource = gameObject.AddComponent<AudioSource>();
+            deleteSource.playOnAwake = false;
+        }
+        deleteSource.clip = deleteSound;
+        deleteSource.loop = true;
+        deleteSource.volume = deleteVolume;
+        deleteSource.Play();
+    }
+
+    private void StopDeleteSound()
+    {
+        if (deleteSource != null && deleteSource.isPlaying)
+        {
+            deleteSource.Stop();
+        }
     }
 
     private void CloseMails()
     {
         isOpen = false;
+        StopDeleteSound();
         panelObj.SetActive(false);
 
         Player player = FindFirstObjectByType<Player>();

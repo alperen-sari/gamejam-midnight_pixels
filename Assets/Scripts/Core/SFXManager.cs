@@ -4,7 +4,7 @@ using UnityEngine;
 /// Ses efekti yöneticisi — tek bir AudioSource kullanır.
 /// "One shot audio" spam'i OLUŞTURMAZ.
 /// 
-/// Kullanım: SFXManager.Play(clip, pos) veya SFXManager.Play2D(clip)
+/// Instance yoksa fallback olarak AudioSource.PlayClipAtPoint kullanır.
 /// Sahneye boş bir GameObject ekle, bu scripti ata.
 /// </summary>
 public class SFXManager : MonoBehaviour
@@ -12,7 +12,7 @@ public class SFXManager : MonoBehaviour
     public static SFXManager Instance { get; private set; }
 
     [Header("Settings")]
-    [SerializeField] private float masterVolume = 1f;
+    [SerializeField] [Range(0f, 1f)] private float masterVolume = 1f;
 
     private AudioSource sfxSource;
 
@@ -25,20 +25,28 @@ public class SFXManager : MonoBehaviour
         }
         Instance = this;
 
-        // Tek bir AudioSource oluştur — tüm one-shot sesler bundan çalar
         sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
     }
 
     /// <summary>
-    /// Belirtilen pozisyonda ses çalar. One shot — obje oluşturmaz.
+    /// Ses çalar. Instance yoksa fallback kullanır.
     /// </summary>
     public static void Play(AudioClip clip, Vector3 position, float volume = 1f)
     {
-        if (clip == null || Instance == null) return;
+        if (clip == null) return;
 
-        float finalVolume = volume * Instance.masterVolume;
-        Instance.sfxSource.PlayOneShot(clip, finalVolume);
+        if (Instance != null && Instance.sfxSource != null)
+        {
+            float finalVolume = volume * Instance.masterVolume;
+            Instance.sfxSource.PlayOneShot(clip, finalVolume);
+        }
+        else
+        {
+            // Fallback — Instance yoksa bile çal
+            Debug.LogWarning("[SFXManager] Instance yok! Fallback kullanılıyor.");
+            AudioSource.PlayClipAtPoint(clip, position, volume);
+        }
     }
 
     /// <summary>
@@ -46,9 +54,20 @@ public class SFXManager : MonoBehaviour
     /// </summary>
     public static void Play2D(AudioClip clip, float volume = 1f)
     {
-        if (clip == null || Instance == null) return;
+        if (clip == null) return;
 
-        float finalVolume = volume * Instance.masterVolume;
-        Instance.sfxSource.PlayOneShot(clip, finalVolume);
+        if (Instance != null && Instance.sfxSource != null)
+        {
+            float finalVolume = volume * Instance.masterVolume;
+            Instance.sfxSource.PlayOneShot(clip, finalVolume);
+        }
+        else
+        {
+            Debug.LogWarning("[SFXManager] Instance yok! Fallback kullanılıyor.");
+            if (Camera.main != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, Camera.main.transform.position, volume);
+            }
+        }
     }
 }

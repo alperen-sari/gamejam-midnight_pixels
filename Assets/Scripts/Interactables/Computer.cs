@@ -20,7 +20,9 @@ public class Computer : MonoBehaviour, IInteractable
 
     [Header("Sound")]
     [SerializeField] private AudioClip typingSound;          // Rapor yazarken
+    [SerializeField] [Range(0f, 1f)] private float typingSoundVol = 0.4f;
     [SerializeField] private AudioClip mailOpenSound;        // Mail açınca
+    [SerializeField] [Range(0f, 1f)] private float mailOpenSoundVol = 0.4f;
 
     private bool reportDone = false;
     private bool mailDone = false;
@@ -76,7 +78,7 @@ public class Computer : MonoBehaviour, IInteractable
 
     private void StartReport(Player player)
     {
-        SFXManager.Play(typingSound, transform.position);
+        SFXManager.Play(typingSound, transform.position, typingSoundVol);
 
         int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
 
@@ -151,7 +153,7 @@ public class Computer : MonoBehaviour, IInteractable
 
     private void StartMail(Player player)
     {
-        SFXManager.Play(mailOpenSound, transform.position);
+        SFXManager.Play(mailOpenSound, transform.position, mailOpenSoundVol);
 
         if (MailSystem.Instance != null)
         {

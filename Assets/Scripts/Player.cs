@@ -11,8 +11,12 @@ public class Player : MonoBehaviour
     [SerializeField] private float interactionRange = 1.5f;
     [SerializeField] private LayerMask interactableLayer;
 
+    [Header("Sound")]
+    [SerializeField] private AudioClip footstepClip;      // Yürüme sesi (loop)
+
     private Rigidbody2D rb;
     private Animator animator;
+    private AudioSource footstepSource;
 
     private Vector2 moveInput;
     private Vector2 lastMoveDirection;
@@ -34,9 +38,16 @@ public class Player : MonoBehaviour
 
         if (rb != null)
         {
-            rb.gravityScale = 0f; // Top-down oyun, yerçekimi yok
+            rb.gravityScale = 0f;
             rb.freezeRotation = true;
         }
+
+        // Yürüme sesi için AudioSource oluştur
+        footstepSource = gameObject.AddComponent<AudioSource>();
+        footstepSource.clip = footstepClip;
+        footstepSource.loop = true;
+        footstepSource.playOnAwake = false;
+        footstepSource.volume = 0.4f;
     }
 
     void Update()
@@ -136,13 +147,22 @@ public class Player : MonoBehaviour
 
         bool isMoving = moveInput.sqrMagnitude > 0.01f;
 
-        // speed: 0 = idle, 1 = yürüme. Animator bu değere göre Idle↔BlendTree geçişi yapar
         animator.SetFloat(AnimSpeed, isMoving ? 1f : 0f);
-
-        // Yön bilgisi her zaman lastMoveDirection'dan gelir (son bakılan yön)
-        // Blend Tree bu değerlere göre doğru walk animasyonunu seçer
         animator.SetFloat(AnimMoveX, lastMoveDirection.x);
         animator.SetFloat(AnimMoveY, lastMoveDirection.y);
+
+        // Yürüme sesi kontrolü
+        if (footstepSource != null && footstepClip != null)
+        {
+            if (isMoving && !footstepSource.isPlaying)
+            {
+                footstepSource.Play();
+            }
+            else if (!isMoving && footstepSource.isPlaying)
+            {
+                footstepSource.Stop();
+            }
+        }
     }
 
     /// <summary>

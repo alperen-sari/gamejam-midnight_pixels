@@ -13,8 +13,12 @@ public class CoffeeMaker : MonoBehaviour, IInteractable
     [SerializeField] private float drinkDuration = 2f;       // İçme animasyonu süresi
 
     [Header("Rebellion")]
-    [SerializeField] private bool isDrinkingRebellion = true;   // İçmek rutin kırma mı?
-    [SerializeField] private float rebellionFracture = 10f;     // Kırılma miktarı
+    [SerializeField] private bool isDrinkingRebellion = true;
+    [SerializeField] private float rebellionFracture = 10f;
+
+    [Header("Sound")]
+    [SerializeField] private AudioClip takeCoffeeSound;       // Kahve alma sesi
+    [SerializeField] private AudioClip drinkCoffeeSound;      // Kahve içme sesi
 
     private bool isUsed = false; // Bu gün kullanıldı mı?
 
@@ -33,19 +37,27 @@ public class CoffeeMaker : MonoBehaviour, IInteractable
     {
         if (!CanInteract()) return;
 
-        // Seçim menüsünü göster
-        if (ChoiceUI.Instance != null)
+        int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
+
+        if (day <= 1)
         {
-            ChoiceUI.Instance.ShowChoices(
-                ("Kahveyi Al ve Götür", () => TakeCoffee(player)),
-                ("Kahveyi Al ve İç", () => DrinkCoffee(player))
-            );
+            // Gün 1: Seçenek yok, direkt al ve götür (rutin öğretme)
+            TakeCoffee(player);
         }
         else
         {
-            // ChoiceUI yoksa direkt al
-            Debug.LogWarning("[CoffeeMaker] ChoiceUI bulunamadı! Kahve direkt alındı.");
-            TakeCoffee(player);
+            // Gün 2+: İsyan seçeneği açılır
+            if (ChoiceUI.Instance != null)
+            {
+                ChoiceUI.Instance.ShowChoices(
+                    ("Kahveyi Al ve Götür", () => TakeCoffee(player)),
+                    ("Kahveyi Al ve İç", () => DrinkCoffee(player))
+                );
+            }
+            else
+            {
+                TakeCoffee(player);
+            }
         }
     }
 
@@ -69,6 +81,9 @@ public class CoffeeMaker : MonoBehaviour, IInteractable
     {
         isUsed = true;
 
+        // Kahve alma sesi
+        SFXManager.Play(takeCoffeeSound, transform.position);
+
         // Kahveyi oyuncunun envanterine ekle
         player.AddItem("kahve");
 
@@ -82,6 +97,9 @@ public class CoffeeMaker : MonoBehaviour, IInteractable
     private void DrinkCoffee(Player player)
     {
         isUsed = true;
+
+        // Kahve içme sesi
+        SFXManager.Play(drinkCoffeeSound, transform.position);
 
         Debug.Log("[CoffeeMaker] Kahve içiliyor...");
 

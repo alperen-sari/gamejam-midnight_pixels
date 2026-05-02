@@ -23,8 +23,10 @@ public class ObjectAnomaly : AnomalyBase
     private Quaternion originalRotation;
     private bool isActive = false;
 
-    void Start()
+    protected override void Start()
     {
+        base.Start();  // AnomalyBase kayıt işlemi
+
         originalPosition = transform.localPosition;
         originalRotation = transform.localRotation;
     }

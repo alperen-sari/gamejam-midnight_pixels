@@ -54,6 +54,10 @@ public class TrashCan : MonoBehaviour, IInteractable
 
     public bool CanInteract()
     {
+        // Gün 1'de çöp kutusu kilitli (rutin kıramazsın)
+        int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
+        if (day <= 1) return false;
+
         Player player = FindFirstObjectByType<Player>();
         return player != null && player.HasItem(targetItem);
     }

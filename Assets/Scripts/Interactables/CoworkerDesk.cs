@@ -23,7 +23,8 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
     [SerializeField] private float fractureDrinkAmount = 10f;    // Kahveyi içtin → kırılma artar
 
     private bool isDelivered = false;
-    private bool hasReacted = false; // Kahve içildi tepkisi verildi mi
+    private bool hasReacted = false;
+    private bool taskCompleted = false;  // Görev tamamen bitti mi?
 
     // Deneme için gün simülasyonu (her konuşmada artır)
     [Header("Debug")]
@@ -41,6 +42,7 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
     {
         isDelivered = false;
         hasReacted = false;
+        taskCompleted = false;
     }
 
     // ==================== IInteractable ====================
@@ -92,7 +94,7 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
 
     public bool CanInteract()
     {
-        return !isDelivered || !hasReacted;
+        return !taskCompleted;
     }
 
     // ==================== Diyalog Durumları ====================
@@ -135,7 +137,11 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
                 break;
         }
 
-        DialogueSystem.Instance.StartDialogue(lines);
+        DialogueSystem.Instance.StartDialogue(lines, () =>
+        {
+            // NPC konuştu → obje marker'ları artık görünsün
+            QuestMarker.QuestGiven = true;
+        });
     }
 
     /// <summary>
@@ -193,7 +199,11 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
 
         DialogueSystem.Instance.StartDialogue(lines, () =>
         {
-            // Görevi tamamla + güven artır
+            taskCompleted = true;
+
+            // Teslim onay sesi
+            DialogueSystem.Instance?.PlayDeliverySound();
+
             if (TaskManager.Instance != null)
             {
                 TaskManager.Instance.CompleteTask(taskId);
@@ -250,7 +260,8 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
 
         DialogueSystem.Instance.StartDialogue(lines, () =>
         {
-            // Güven düşür + kırılma artır
+            taskCompleted = true;  // Artık tekrar konuşulamaz
+
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.ReduceBossTrust(trustLossOnDrink);

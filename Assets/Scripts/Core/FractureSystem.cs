@@ -10,8 +10,8 @@ public class FractureSystem : MonoBehaviour
     public static FractureSystem Instance { get; private set; }
 
     [Header("Anomaly Settings")]
-    [SerializeField] private float anomalyCheckInterval = 5f;   // Kaç saniyede bir anomali kontrolü
-    [SerializeField] private float baseAnomalyChance = 0.1f;    // Temel anomali şansı
+    [SerializeField] private float anomalyCheckInterval = 3f;   // Kaç saniyede bir anomali kontrolü
+    [SerializeField] private float baseAnomalyChance = 0.25f;   // Temel anomali şansı (%25)
 
     [Header("References")]
     [SerializeField] private List<AnomalyBase> registeredAnomalies = new List<AnomalyBase>();
@@ -78,6 +78,47 @@ public class FractureSystem : MonoBehaviour
         selected.Trigger();
 
         Debug.Log($"[FractureSystem] Anomali tetiklendi: {selected.AnomalyName} (Kırılma: %{fracturePercent * 100:F0})");
+    }
+
+    /// <summary>
+    /// Rutin kırıldığında ANINDA anomali tetikler.
+    /// rebellionNumber: bu gün kaçıncı isyan.
+    /// 1. isyan = sadece kamera shake
+    /// 2.+ isyan = kamera shake + obje anomalisi
+    /// </summary>
+    public void TriggerImmediateAnomaly(int rebellionNumber)
+    {
+        Debug.Log($"[FractureSystem] ANLIK anomali! İsyan #{rebellionNumber}");
+
+        // Kamera anomalisi bul ve tetikle
+        CameraAnomaly camAnomaly = null;
+        ObjectAnomaly objAnomaly = null;
+
+        foreach (var anomaly in registeredAnomalies)
+        {
+            if (anomaly is CameraAnomaly ca && camAnomaly == null)
+                camAnomaly = ca;
+            if (anomaly is ObjectAnomaly oa && objAnomaly == null)
+                objAnomaly = oa;
+        }
+
+        // 1. isyan: kamera shake
+        if (camAnomaly != null)
+        {
+            camAnomaly.Trigger();
+        }
+
+        // 2.+ isyan: kamera + obje
+        if (rebellionNumber >= 2 && objAnomaly != null)
+        {
+            objAnomaly.Trigger();
+        }
+
+        // Post-Processing efektlerini güncelle
+        if (PostProcessAnomaly.Instance != null)
+        {
+            PostProcessAnomaly.Instance.OnRebellion(rebellionNumber);
+        }
     }
 
     /// <summary>

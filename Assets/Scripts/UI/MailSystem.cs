@@ -187,7 +187,16 @@ public class MailSystem : MonoBehaviour
         fromText.text = $"Kimden: {mail.From}";
         subjectText.text = mail.Subject;
         bodyText.text = mail.Body;
-        instructionText.text = $"Mail {currentMailIndex + 1}/{currentMails.Count}  |  [E] Sonraki  [Backspace] Sil  [Esc] Kapat";
+
+        int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
+        if (day >= 3)
+        {
+            instructionText.text = $"Mail {currentMailIndex + 1}/{currentMails.Count}  |  [E] Sonraki  [Backspace] Sil  [Esc] Kapat";
+        }
+        else
+        {
+            instructionText.text = $"Mail {currentMailIndex + 1}/{currentMails.Count}  |  [E] Sonraki  [Esc] Kapat";
+        }
     }
 
     void Update()
@@ -200,10 +209,14 @@ public class MailSystem : MonoBehaviour
             currentMailIndex++;
             ShowCurrentMail();
         }
-        else if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete))
+        else if ((Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete)))
         {
-            // Maili sil (isyan!)
-            DeleteCurrentMail();
+            // Maili sil — sadece Gün 3+
+            int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
+            if (day >= 3)
+            {
+                DeleteCurrentMail();
+            }
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {

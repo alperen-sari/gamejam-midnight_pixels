@@ -2,7 +2,10 @@ using UnityEngine;
 
 /// <summary>
 /// Kamerada anomali efektleri: titreme, zoom bozulması, kayma.
-/// Kamera objesine eklenir.
+/// CameraFollow.anomalyOffset üzerinden çalışır — transform'u doğrudan bozmaz.
+/// 
+/// Main Camera objesine eklenir.
+/// FractureSystem'e otomatik kayıt olur (AnomalyBase sayesinde).
 /// </summary>
 public class CameraAnomaly : AnomalyBase
 {
@@ -12,12 +15,13 @@ public class CameraAnomaly : AnomalyBase
     [SerializeField] private float zoomGlitchAmount = 0.5f;
 
     private Camera cam;
-    private Vector3 originalPosition;
     private float originalSize;
     private bool isShaking = false;
 
-    void Start()
+    protected override void Start()
     {
+        base.Start();  // AnomalyBase kayıt işlemi
+
         cam = GetComponent<Camera>();
         if (cam == null) cam = Camera.main;
         
@@ -56,19 +60,27 @@ public class CameraAnomaly : AnomalyBase
     private System.Collections.IEnumerator CameraShake(float duration, float intensity)
     {
         isShaking = true;
-        originalPosition = transform.localPosition;
         float elapsed = 0f;
 
         while (elapsed < duration)
         {
             float x = Random.Range(-intensity, intensity);
             float y = Random.Range(-intensity, intensity);
-            transform.localPosition = originalPosition + new Vector3(x, y, 0f);
+
+            // CameraFollow üzerinden offset ver
+            if (CameraFollow.Instance != null)
+            {
+                CameraFollow.Instance.anomalyOffset = new Vector3(x, y, 0f);
+            }
+
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        transform.localPosition = originalPosition;
+        if (CameraFollow.Instance != null)
+        {
+            CameraFollow.Instance.anomalyOffset = Vector3.zero;
+        }
         isShaking = false;
     }
 
@@ -99,19 +111,20 @@ public class CameraAnomaly : AnomalyBase
 
     private System.Collections.IEnumerator CameraDrift()
     {
-        originalPosition = transform.localPosition;
         float driftDuration = 2f;
         float elapsed = 0f;
-        Vector3 driftTarget = originalPosition + new Vector3(
+        Vector3 driftTarget = new Vector3(
             Random.Range(-0.5f, 0.5f),
             Random.Range(-0.5f, 0.5f),
             0f
         );
 
-        // Yavaşça kayır
         while (elapsed < driftDuration)
         {
-            transform.localPosition = Vector3.Lerp(originalPosition, driftTarget, elapsed / driftDuration);
+            if (CameraFollow.Instance != null)
+            {
+                CameraFollow.Instance.anomalyOffset = Vector3.Lerp(Vector3.zero, driftTarget, elapsed / driftDuration);
+            }
             elapsed += Time.deltaTime;
             yield return null;
         }
@@ -120,11 +133,17 @@ public class CameraAnomaly : AnomalyBase
         elapsed = 0f;
         while (elapsed < driftDuration * 0.5f)
         {
-            transform.localPosition = Vector3.Lerp(driftTarget, originalPosition, elapsed / (driftDuration * 0.5f));
+            if (CameraFollow.Instance != null)
+            {
+                CameraFollow.Instance.anomalyOffset = Vector3.Lerp(driftTarget, Vector3.zero, elapsed / (driftDuration * 0.5f));
+            }
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        transform.localPosition = originalPosition;
+        if (CameraFollow.Instance != null)
+        {
+            CameraFollow.Instance.anomalyOffset = Vector3.zero;
+        }
     }
 }

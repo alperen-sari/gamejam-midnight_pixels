@@ -20,6 +20,12 @@ public class DialogueSystem : MonoBehaviour
     [SerializeField] private Color textColor = Color.white;
     [SerializeField] private Color bgColor = new Color(0.05f, 0.05f, 0.1f, 0.92f);
 
+    [Header("Sound")]
+    [SerializeField] private AudioClip talkSound;          // Normal konuşma sesi
+    [SerializeField] private AudioClip anomalyTalkSound;   // Gün 3 / yüksek kırılmada konuşma sesi
+    [SerializeField] private AudioClip deliverySound;      // Teslim onay sesi
+    [SerializeField] [Range(0f, 1f)] private float talkVolume = 0.4f;
+
     // Events
     public System.Action<DialogueLine> OnDialogueStarted;
     public System.Action OnDialogueEnded;
@@ -36,6 +42,7 @@ public class DialogueSystem : MonoBehaviour
     private bool isTyping = false;
     private string fullLineText = "";
     private Coroutine typingCoroutine;
+    private AudioSource talkSource;   // Konuşma sesi için tek AudioSource
 
     // Diyalog bitince çağrılacak callback
     private System.Action onDialogueCompleteCallback;
@@ -197,6 +204,9 @@ public class DialogueSystem : MonoBehaviour
             typingCoroutine = null;
         }
 
+        // Konuşma sesini durdur
+        StopTalkAudio();
+
         Player player = FindFirstObjectByType<Player>();
         if (player != null)
         {
@@ -217,14 +227,76 @@ public class DialogueSystem : MonoBehaviour
         isTyping = true;
         dialogueText.text = "";
 
+        // Hangi ses çalınacak? Gün 3 veya yüksek kırılmada anomali sesi
+        AudioClip activeClip = GetActiveTalkSound();
+
+        // Konuşma sesini başlat (loop)
+        StartTalkAudio(activeClip);
+
         foreach (char c in text)
         {
             dialogueText.text += c;
             yield return new WaitForSeconds(typingSpeed);
         }
 
+        // Yazım bitti — sesi durdur
+        StopTalkAudio();
+
         isTyping = false;
         continueText.gameObject.SetActive(true);
+    }
+
+    private AudioClip GetActiveTalkSound()
+    {
+        if (anomalyTalkSound != null && GameManager.Instance != null)
+        {
+            // Gün 3+ veya kırılma %50+ ise anomali sesi
+            if (GameManager.Instance.CurrentDay >= 3 || GameManager.Instance.FracturePercent >= 0.5f)
+            {
+                return anomalyTalkSound;
+            }
+        }
+        return talkSound;
+    }
+
+    private void StartTalkAudio(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        if (talkSource == null)
+        {
+            talkSource = gameObject.AddComponent<AudioSource>();
+            talkSource.playOnAwake = false;
+        }
+
+        talkSource.clip = clip;
+        talkSource.loop = true;
+        talkSource.volume = talkVolume;
+        talkSource.Play();
+    }
+
+    private void StopTalkAudio()
+    {
+        if (talkSource != null && talkSource.isPlaying)
+        {
+            talkSource.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Teslim onay sesini çalar. Dışarıdan çağrılabilir.
+    /// </summary>
+    public void PlayDeliverySound()
+    {
+        if (deliverySound != null)
+        {
+            if (talkSource == null)
+            {
+                talkSource = gameObject.AddComponent<AudioSource>();
+                talkSource.playOnAwake = false;
+            }
+            talkSource.PlayOneShot(deliverySound, talkVolume);
+        }
     }
 
     void Update()
@@ -235,15 +307,16 @@ public class DialogueSystem : MonoBehaviour
         {
             if (isTyping)
             {
-                // Yazım devam ediyorsa → hemen bitir
+                // Yazım devam ediyorsa → hemen bitir + sesi durdur
                 if (typingCoroutine != null) StopCoroutine(typingCoroutine);
+                StopTalkAudio();
                 dialogueText.text = fullLineText;
                 isTyping = false;
                 continueText.gameObject.SetActive(true);
             }
             else
             {
-                // Yazım bitmişse → sonraki satır
+                // Yazım bitmişse → sonraki satır (TypeText sesi tekrar başlatır)
                 ShowNextLine();
             }
         }

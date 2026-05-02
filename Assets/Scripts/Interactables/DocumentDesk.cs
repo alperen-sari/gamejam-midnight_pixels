@@ -20,12 +20,13 @@ public class DocumentDesk : MonoBehaviour, IInteractable
 
     private bool isDelivered = false;
     private bool hasReacted = false;
+    private bool taskCompleted = false;
 
     void Start()
     {
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.OnDayChanged += (_) => { isDelivered = false; hasReacted = false; };
+            GameManager.Instance.OnDayChanged += (_) => { isDelivered = false; hasReacted = false; taskCompleted = false; };
         }
     }
 
@@ -67,7 +68,7 @@ public class DocumentDesk : MonoBehaviour, IInteractable
 
     public bool CanInteract()
     {
-        return !isDelivered || !hasReacted;
+        return !taskCompleted;
     }
 
     // ==================== Durumlar ====================
@@ -102,7 +103,10 @@ public class DocumentDesk : MonoBehaviour, IInteractable
                 break;
         }
 
-        DialogueSystem.Instance.StartDialogue(lines);
+        DialogueSystem.Instance.StartDialogue(lines, () =>
+        {
+            QuestMarker.QuestGiven = true;
+        });
     }
 
     private void HandleDelivery(Player player)
@@ -155,6 +159,10 @@ public class DocumentDesk : MonoBehaviour, IInteractable
 
         DialogueSystem.Instance.StartDialogue(lines, () =>
         {
+            taskCompleted = true;
+
+            DialogueSystem.Instance?.PlayDeliverySound();
+
             if (TaskManager.Instance != null)
                 TaskManager.Instance.CompleteTask(taskId);
             if (GameManager.Instance != null)
@@ -200,6 +208,8 @@ public class DocumentDesk : MonoBehaviour, IInteractable
 
         DialogueSystem.Instance.StartDialogue(lines, () =>
         {
+            taskCompleted = true;
+
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.ReduceBossTrust(trustLossOnTrash);

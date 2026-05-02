@@ -51,6 +51,22 @@ public abstract class AnomalyBase : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// OnEnable'da Instance henüz null olabilir — Start'ta tekrar dene.
+    /// </summary>
+    protected virtual void Start()
+    {
+        if (FractureSystem.Instance != null)
+        {
+            FractureSystem.Instance.RegisterAnomaly(this);
+            Debug.Log($"[AnomalyBase] '{anomalyName}' kayıt edildi. MinStage: {minimumStage}");
+        }
+        else
+        {
+            Debug.LogWarning($"[AnomalyBase] '{anomalyName}' kayıt EDİLEMEDİ — FractureSystem bulunamadı!");
+        }
+    }
+
     protected virtual void OnDisable()
     {
         if (FractureSystem.Instance != null)

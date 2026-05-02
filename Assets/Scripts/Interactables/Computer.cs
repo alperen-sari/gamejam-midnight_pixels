@@ -78,13 +78,23 @@ public class Computer : MonoBehaviour, IInteractable
     {
         SFXManager.Play(typingSound, transform.position);
 
+        int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
+
         if (ReportMiniGame.Instance != null)
         {
-            // Önce normal/doodle seçimi
-            ChoiceUI.Instance?.ShowChoices(
-                ("Normal Rapor Yaz", () => RunMiniGame(player, false)),
-                ("Doodle Çiz", () => RunMiniGame(player, true))
-            );
+            if (day >= 3)
+            {
+                // Gün 3+: Doodle seçeneği açılır
+                ChoiceUI.Instance?.ShowChoices(
+                    ("Normal Rapor Yaz", () => RunMiniGame(player, false)),
+                    ("Doodle Çiz", () => RunMiniGame(player, true))
+                );
+            }
+            else
+            {
+                // Gün 1-2: Seçenek yok, direkt normal rapor
+                RunMiniGame(player, false);
+            }
         }
         else
         {

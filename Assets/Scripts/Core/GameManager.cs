@@ -61,14 +61,18 @@ public class GameManager : MonoBehaviour
 
     // ==================== Kırılma (Gizli) ====================
 
+    private int rebellionCount = 0;  // Bu gün kaç rutin kırıldı
+    public int RebellionCount => rebellionCount;
+
     /// <summary>
     /// Kırılma seviyesini artırır. Rutin kırıldığında çağrılır.
-    /// Ekranda gösterilmez, arka planda anomalileri tetikler.
+    /// Anında anomali tetikler!
     /// </summary>
     public void AddFracture(float amount)
     {
         float oldLevel = fractureLevel;
         fractureLevel = Mathf.Clamp(fractureLevel + amount, 0f, maxFracture);
+        rebellionCount++;
 
         if (!Mathf.Approximately(oldLevel, fractureLevel))
         {
@@ -80,6 +84,12 @@ public class GameManager : MonoBehaviour
                 lastStage = newStage;
                 OnFractureStageChanged?.Invoke(newStage);
                 Debug.Log($"[GameManager] Kırılma aşaması değişti: {newStage}");
+            }
+
+            // Rutin kırılınca ANINDA anomali tetikle
+            if (FractureSystem.Instance != null)
+            {
+                FractureSystem.Instance.TriggerImmediateAnomaly(rebellionCount);
             }
         }
     }
@@ -127,6 +137,7 @@ public class GameManager : MonoBehaviour
         }
 
         currentDay++;
+        rebellionCount = 0;
         Debug.Log($"[GameManager] Gün {currentDay}. Kırılma: %{FracturePercent * 100:F0} | Güven: {bossTrust:F0}");
         OnDayChanged?.Invoke(currentDay);
     }

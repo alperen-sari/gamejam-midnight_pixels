@@ -15,7 +15,7 @@ public class SpamMailMiniGame : MonoBehaviour
     public static SpamMailMiniGame Instance { get; private set; }
 
     [Header("Settings")]
-    [SerializeField] private float gameDuration = 15f;
+    [SerializeField] private float gameDuration = 3f;
     [SerializeField] private float spawnInterval = 1.5f;
     [SerializeField] private int maxPopups = 12;
 

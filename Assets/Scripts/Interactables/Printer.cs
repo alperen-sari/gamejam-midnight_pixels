@@ -31,6 +31,10 @@ public class Printer : MonoBehaviour, IInteractable
         isUsed = true;
         player.AddItem(itemId);
 
+        // İkonu gizle
+        HeadIcon icon = GetComponent<HeadIcon>();
+        if (icon != null) icon.OnInteracted();
+
         // Yazıcı sesi çal
         SFXManager.Play(printSound, transform.position, printSoundVol);
 

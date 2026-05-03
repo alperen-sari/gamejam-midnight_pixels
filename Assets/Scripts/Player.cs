@@ -105,6 +105,14 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.E) && currentInteractable != null)
         {
             currentInteractable.Interact(this);
+
+            // Etkileşilen objenin ikon sembolünü gizle
+            MonoBehaviour mb = currentInteractable as MonoBehaviour;
+            if (mb != null)
+            {
+                HeadIcon icon = mb.GetComponent<HeadIcon>();
+                if (icon != null) icon.OnInteracted();
+            }
         }
     }
 

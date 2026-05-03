@@ -21,6 +21,7 @@ public class ObjectAnomaly : AnomalyBase
 
     [Header("Sound")]
     [SerializeField] private AudioClip glitchSound;        // Bozulma anında çalan ses
+    [SerializeField] [Range(0f, 1f)] private float glitchSoundVol = 0.7f;
 
     private Vector3 originalPosition;
     private Quaternion originalRotation;
@@ -39,7 +40,7 @@ public class ObjectAnomaly : AnomalyBase
         if (isActive) return;
 
         // Bozulma sesi
-        SFXManager.Play(glitchSound, transform.position, 0.7f);
+        SFXManager.Play(glitchSound, transform.position, glitchSoundVol);
 
         // Kırılma seviyesine göre yoğunluğu ayarla
         float fractureMultiplier = 1f;

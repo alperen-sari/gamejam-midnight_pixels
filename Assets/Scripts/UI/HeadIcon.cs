@@ -108,10 +108,18 @@ public class HeadIcon : MonoBehaviour
     {
         iconText = text;
         iconColor = color;
-        if (textMesh != null)
+        if (iconObj == null) return;
+
+        TextMesh tm = iconObj.GetComponent<TextMesh>();
+        if (tm != null)
         {
-            textMesh.text = text;
-            textMesh.color = color;
+            tm.text = text;
+            tm.color = color;
+        }
+        SpriteRenderer sr = iconObj.GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            sr.color = color;
         }
     }
 

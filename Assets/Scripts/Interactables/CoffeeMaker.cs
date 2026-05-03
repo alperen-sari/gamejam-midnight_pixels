@@ -83,6 +83,10 @@ public class CoffeeMaker : MonoBehaviour, IInteractable
     {
         isUsed = true;
 
+        // İkonu gizle
+        HeadIcon icon = GetComponent<HeadIcon>();
+        if (icon != null) icon.OnInteracted();
+
         // Kahve alma sesi
         SFXManager.Play(takeCoffeeSound, transform.position);
 

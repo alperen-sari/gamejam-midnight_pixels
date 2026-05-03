@@ -1,60 +1,45 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections;
 
 /// <summary>
-/// Stardew Valley balık tutma tarzı mini-game.
-/// Dikey bar içinde hareketli bir hedef bölge var.
-/// Oyuncu SPACE basılı tutarak imleci yukarı kaldırır, bırakınca düşer.
-/// İmleç hedef bölgede olduğu sürece ilerleme barı dolar.
-/// Bölge dışındaysa ilerleme barı azalır.
-/// 
-/// Kullanım: TearMiniGame.Instance.StartGame(callback);
+/// Sözleşme yırtma mini-game: SPACE'e hızlı bas, bar dolsun!
+/// Bar dolunca sözleşme yırtılır.
+/// Basmazsan bar yavaşça azalır.
+///
+/// Sahneye: Create Empty → "TearMiniGame" → Add Component: TearMiniGame
 /// </summary>
 public class TearMiniGame : MonoBehaviour
 {
     public static TearMiniGame Instance { get; private set; }
 
     [Header("Gameplay")]
-    [SerializeField] private float cursorSpeed = 3f;         // SPACE basınca yukarı hız
-    [SerializeField] private float gravity = 4f;             // Bırakınca düşme hızı
-    [SerializeField] private float targetMoveSpeed = 2f;     // Hedef bölge hareket hızı
-    [SerializeField] private float targetZoneSize = 0.25f;   // Hedef bölge boyutu (0-1)
-    [SerializeField] private float fillSpeed = 0.3f;         // İçindeyken dolma hızı
-    [SerializeField] private float drainSpeed = 0.2f;        // Dışındayken boşalma hızı
-    [SerializeField] private float winThreshold = 1f;        // Kazanma eşiği
+    [SerializeField] private float fillPerPress = 0.04f;     // Her basışta ne kadar dolar
+    [SerializeField] private float drainSpeed = 0.15f;       // Basmazsan ne kadar azalır/sn
+    [SerializeField] private float shakeIntensity = 5f;      // Bar doldukça titreme
 
     [Header("Sound")]
-    [SerializeField] private AudioClip progressSound;
-    [SerializeField] [Range(0f, 1f)] private float progressSoundVol = 0.3f;
-    [SerializeField] private AudioClip failSound;
-    [SerializeField] [Range(0f, 1f)] private float failSoundVol = 0.5f;
+    [SerializeField] private AudioClip mashSound;            // Her basışta ses
+    [SerializeField] [Range(0f, 1f)] private float mashSoundVol = 0.3f;
     [SerializeField] private AudioClip winSound;
     [SerializeField] [Range(0f, 1f)] private float winSoundVol = 0.6f;
 
     [Header("Visuals")]
     [SerializeField] private Color barBgColor = new Color(0.15f, 0.15f, 0.2f);
-    [SerializeField] private Color targetZoneColor = new Color(0.2f, 0.7f, 0.3f, 0.4f);
-    [SerializeField] private Color cursorColor = new Color(1f, 0.9f, 0.3f);
-    [SerializeField] private Color progressColor = new Color(0.3f, 0.8f, 0.4f);
+    [SerializeField] private Color barFillColor = new Color(0.9f, 0.3f, 0.2f);
+    [SerializeField] private Color barFullColor = new Color(1f, 0.1f, 0.05f);
 
     // UI
     private GameObject gameCanvas;
     private GameObject panelObj;
-    private RectTransform barRect;
-    private RectTransform targetZoneRect;
-    private RectTransform cursorRect;
-    private Image progressFill;
-    private TextMeshProUGUI instructionText;
+    private Image barFill;
     private TextMeshProUGUI titleText;
+    private TextMeshProUGUI instructionText;
+    private RectTransform barRect;
 
     // State
     private bool isActive = false;
-    private float cursorPos = 0.5f;     // 0 (alt) — 1 (üst)
-    private float targetPos = 0.5f;     // Hedef bölgenin merkezi
-    private float targetDir = 1f;       // Hedef hareket yönü
-    private float progress = 0f;        // 0 — 1 arası ilerleme
+    private float progress = 0f;
     private System.Action<bool> onCompleteCallback;
 
     void Awake()
@@ -76,69 +61,54 @@ public class TearMiniGame : MonoBehaviour
         s.referenceResolution = new Vector2(1920, 1080);
         gameCanvas.AddComponent<GraphicRaycaster>();
 
-        // Arka plan (yarı saydam)
+        // Arka plan
         panelObj = new GameObject("BgPanel");
         panelObj.transform.SetParent(gameCanvas.transform, false);
         Image bg = panelObj.AddComponent<Image>();
-        bg.color = new Color(0f, 0f, 0f, 0.7f);
+        bg.color = new Color(0f, 0f, 0f, 0.75f);
         SetFullStretch(panelObj);
 
         // Başlık
         GameObject titleObj = CreateRect(panelObj, "Title",
-            new Vector2(0.2f, 0.85f), new Vector2(0.8f, 0.95f));
+            new Vector2(0.15f, 0.72f), new Vector2(0.85f, 0.85f));
         titleText = titleObj.AddComponent<TextMeshProUGUI>();
-        titleText.text = "SÖZLEŞMEYI YIRT!";
-        titleText.fontSize = 36;
+        titleText.text = "SÖZLEŞMEYİ YIRT!";
+        titleText.fontSize = 48;
         titleText.color = Color.white;
         titleText.fontStyle = FontStyles.Bold;
         titleText.alignment = TextAlignmentOptions.Center;
 
         // Talimat
         GameObject instrObj = CreateRect(panelObj, "Instruction",
-            new Vector2(0.2f, 0.78f), new Vector2(0.8f, 0.85f));
+            new Vector2(0.2f, 0.62f), new Vector2(0.8f, 0.72f));
         instructionText = instrObj.AddComponent<TextMeshProUGUI>();
-        instructionText.text = "SPACE basılı tut — imleci yeşil bölgede tut!";
-        instructionText.fontSize = 18;
-        instructionText.color = new Color(0.8f, 0.8f, 0.8f);
+        instructionText.text = "[ SPACE ] tuşuna bas! Hızlı bas!";
+        instructionText.fontSize = 24;
+        instructionText.color = new Color(0.9f, 0.9f, 0.6f);
         instructionText.alignment = TextAlignmentOptions.Center;
 
-        // Ana bar (dikey, ortada)
+        // Bar arka planı
         GameObject barBg = CreateRect(panelObj, "BarBg",
-            new Vector2(0.45f, 0.1f), new Vector2(0.55f, 0.75f));
-        barBg.AddComponent<Image>().color = barBgColor;
+            new Vector2(0.2f, 0.4f), new Vector2(0.8f, 0.55f));
+        Image barBgImg = barBg.AddComponent<Image>();
+        barBgImg.color = barBgColor;
         barRect = barBg.GetComponent<RectTransform>();
 
-        // Hedef bölge (yeşil)
-        GameObject targetObj = new GameObject("TargetZone");
-        targetObj.transform.SetParent(barBg.transform, false);
-        Image tzImg = targetObj.AddComponent<Image>();
-        tzImg.color = targetZoneColor;
-        targetZoneRect = targetObj.GetComponent<RectTransform>();
-        targetZoneRect.anchorMin = new Vector2(0f, 0.4f);
-        targetZoneRect.anchorMax = new Vector2(1f, 0.6f);
-        targetZoneRect.offsetMin = Vector2.zero;
-        targetZoneRect.offsetMax = Vector2.zero;
+        // Outline efekti
+        Outline outline = barBg.AddComponent<Outline>();
+        outline.effectColor = new Color(1f, 1f, 1f, 0.3f);
+        outline.effectDistance = new Vector2(2f, 2f);
 
-        // İmleç (sarı çizgi)
-        GameObject cursorObj = new GameObject("Cursor");
-        cursorObj.transform.SetParent(barBg.transform, false);
-        Image curImg = cursorObj.AddComponent<Image>();
-        curImg.color = cursorColor;
-        cursorRect = cursorObj.GetComponent<RectTransform>();
-        cursorRect.anchorMin = new Vector2(0.05f, 0.49f);
-        cursorRect.anchorMax = new Vector2(0.95f, 0.51f);
-        cursorRect.offsetMin = Vector2.zero;
-        cursorRect.offsetMax = Vector2.zero;
-
-        // İlerleme barı (sağ taraf)
-        GameObject progBg = CreateRect(panelObj, "ProgressBg",
-            new Vector2(0.58f, 0.1f), new Vector2(0.62f, 0.75f));
-        progBg.AddComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f);
-
-        GameObject progFill = CreateRect(progBg, "ProgressFill",
-            Vector2.zero, new Vector2(1f, 0f));
-        progressFill = progFill.AddComponent<Image>();
-        progressFill.color = progressColor;
+        // Bar dolgu
+        GameObject fillObj = new GameObject("BarFill");
+        fillObj.transform.SetParent(barBg.transform, false);
+        barFill = fillObj.AddComponent<Image>();
+        barFill.color = barFillColor;
+        RectTransform fillRect = fillObj.GetComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = new Vector2(0f, 1f);
+        fillRect.offsetMin = Vector2.zero;
+        fillRect.offsetMax = Vector2.zero;
 
         panelObj.SetActive(false);
     }
@@ -150,9 +120,6 @@ public class TearMiniGame : MonoBehaviour
         if (isActive) return;
         onCompleteCallback = onComplete;
         isActive = true;
-        cursorPos = 0.5f;
-        targetPos = 0.5f;
-        targetDir = 1f;
         progress = 0f;
 
         panelObj.SetActive(true);
@@ -167,49 +134,22 @@ public class TearMiniGame : MonoBehaviour
     {
         if (!isActive) return;
 
-        // İmleç kontrolü
-        if (Input.GetKey(KeyCode.Space))
+        // SPACE basıldı mı?
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            cursorPos += cursorSpeed * Time.deltaTime;
-        }
-        else
-        {
-            cursorPos -= gravity * Time.deltaTime;
-        }
-        cursorPos = Mathf.Clamp01(cursorPos);
-
-        // Hedef bölge hareketi (yukarı-aşağı bouncing)
-        targetPos += targetDir * targetMoveSpeed * Time.deltaTime;
-        if (targetPos >= 1f - targetZoneSize * 0.5f)
-        {
-            targetDir = -1f;
-            targetPos = 1f - targetZoneSize * 0.5f;
-        }
-        else if (targetPos <= targetZoneSize * 0.5f)
-        {
-            targetDir = 1f;
-            targetPos = targetZoneSize * 0.5f;
+            progress += fillPerPress;
+            SFXManager.Play2D(mashSound, mashSoundVol);
         }
 
-        // İmleç hedef bölgede mi?
-        float halfZone = targetZoneSize * 0.5f;
-        bool inZone = cursorPos >= targetPos - halfZone && cursorPos <= targetPos + halfZone;
-
-        if (inZone)
-        {
-            progress += fillSpeed * Time.deltaTime;
-        }
-        else
-        {
-            progress -= drainSpeed * Time.deltaTime;
-        }
-        progress = Mathf.Clamp(progress, 0f, winThreshold);
+        // Basmazsan azalır
+        progress -= drainSpeed * Time.deltaTime;
+        progress = Mathf.Clamp01(progress);
 
         // UI güncelle
         UpdateUI();
 
         // Kazandı mı?
-        if (progress >= winThreshold)
+        if (progress >= 1f)
         {
             SFXManager.Play2D(winSound, winSoundVol);
             EndGame(true);
@@ -218,23 +158,39 @@ public class TearMiniGame : MonoBehaviour
 
     private void UpdateUI()
     {
-        // İmleç pozisyonu
-        cursorRect.anchorMin = new Vector2(0.05f, cursorPos - 0.015f);
-        cursorRect.anchorMax = new Vector2(0.95f, cursorPos + 0.015f);
+        // Bar dolgusu
+        RectTransform fillRect = barFill.GetComponent<RectTransform>();
+        fillRect.anchorMax = new Vector2(progress, 1f);
 
-        // Hedef bölge pozisyonu
-        float halfZone = targetZoneSize * 0.5f;
-        targetZoneRect.anchorMin = new Vector2(0f, targetPos - halfZone);
-        targetZoneRect.anchorMax = new Vector2(1f, targetPos + halfZone);
+        // Renk geçişi (kırmızıya döner)
+        barFill.color = Color.Lerp(barFillColor, barFullColor, progress);
 
-        // İlerleme barı
-        RectTransform progRect = progressFill.GetComponent<RectTransform>();
-        progRect.anchorMax = new Vector2(1f, progress / winThreshold);
+        // Titreme efekti (bar doldukça artar)
+        if (progress > 0.3f)
+        {
+            float shake = shakeIntensity * progress;
+            float x = Random.Range(-shake, shake);
+            float y = Random.Range(-shake, shake);
+            barRect.anchoredPosition = new Vector2(x, y);
+        }
+        else
+        {
+            barRect.anchoredPosition = Vector2.zero;
+        }
+
+        // Yazı değişimi
+        if (progress > 0.8f)
+            instructionText.text = "BIRAKMA! AZ KALDI!";
+        else if (progress > 0.5f)
+            instructionText.text = "DEVAM ET! BAS BAS BAS!";
+        else
+            instructionText.text = "[ SPACE ] tuşuna bas! Hızlı bas!";
     }
 
     private void EndGame(bool success)
     {
         isActive = false;
+        barRect.anchoredPosition = Vector2.zero;
         panelObj.SetActive(false);
 
         Player p = FindFirstObjectByType<Player>();

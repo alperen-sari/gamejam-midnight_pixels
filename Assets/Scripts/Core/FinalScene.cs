@@ -35,6 +35,8 @@ public class FinalScene : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] private float trappedMusicVol = 0.3f;
     [SerializeField] private AudioClip glitchSound;
     [SerializeField] [Range(0f, 1f)] private float glitchSoundVol = 0.4f;
+    [SerializeField] private AudioClip doorSound;             // Kapı açılma/çıkma sesi
+    [SerializeField] [Range(0f, 1f)] private float doorSoundVol = 0.6f;
 
     [Header("Boss Voice (Blip)")]
     [SerializeField] private AudioClip bossBlipSound;           // Kısa blip ses
@@ -349,11 +351,8 @@ public class FinalScene : MonoBehaviour
     {
         contractPanel.SetActive(false);
 
-        // Post-processing anomali BAŞLAR (ilk kez itaatkar oyuncu görür)
         if (PostProcessAnomaly.Instance != null)
-        {
-            PostProcessAnomaly.Instance.OnRebellion(3); // Full efekt
-        }
+            PostProcessAnomaly.Instance.OnRebellion(3);
 
         dialogueText.text = "";
         yield return new WaitForSeconds(1f);
@@ -366,27 +365,33 @@ public class FinalScene : MonoBehaviour
             src.volume = trappedMusicVol; src.Play();
         }
 
-        yield return TypeText("\"Tebrikler. Artık kalıcısın.\"");
-        yield return new WaitForSeconds(2f);
-
-        yield return TypeText("Saat tik-tak ediyor.");
-        yield return new WaitForSeconds(2f);
-
-        yield return TypeText("Yarın da aynı gün olacak.");
-        yield return new WaitForSeconds(1f);
-
-        yield return TypeText("Ve ertesi gün de.");
-        yield return new WaitForSeconds(2f);
-
         // Fade to black
-        yield return FadeOut(3f);
+        yield return FadeOut(2f);
+        dialogueText.gameObject.SetActive(false);
 
+        // === SINEMATİK YAZI DİZİSİ ===
         endingText.gameObject.SetActive(true);
-        endingText.text = "<size=24>\"Bazı kafesler o kadar rahat ki\ninsan içeride olduğunu unutuyor.\"</size>";
-        endingText.color = new Color(0.5f, 0.5f, 0.5f);
-        yield return new WaitForSeconds(5f);
+        endingText.transform.SetAsLastSibling();
 
-        endingText.text = "<size=18>Oyun bitti.</size>";
+        yield return ShowEndingSlide("İmzaladın.", Color.white, 3f);
+        yield return ShowEndingSlide("Artık kalıcısın.", Color.white, 3f);
+        yield return ShowEndingSlide("...", new Color(0.5f, 0.5f, 0.5f), 2f);
+        yield return ShowEndingSlide("Ertesi gün aynı masada uyandın.", Color.white, 3.5f);
+        yield return ShowEndingSlide("Aynı kahve. Aynı evraklar.\nAynı görevler.", new Color(0.7f, 0.7f, 0.7f), 4f);
+        yield return ShowEndingSlide("Hiçbir şey değişmedi.", new Color(0.5f, 0.5f, 0.5f), 3f);
+        yield return ShowEndingSlide("Hiçbir şey değişmeyecek.", new Color(0.4f, 0.4f, 0.4f), 3f);
+        yield return ShowEndingSlide("", Color.black, 2f);
+
+        yield return ShowEndingSlide(
+            "\"Bazı kafesler o kadar rahat ki\ninsan içeride olduğunu unutuyor.\"",
+            new Color(0.6f, 0.6f, 0.6f), 5f);
+
+        yield return ShowEndingSlide("SON", Color.white, 3f);
+        yield return ShowEndingSlide("Rutini kabul ettin.", new Color(0.4f, 0.4f, 0.4f), 4f);
+
+        // Menüye dön
+        yield return new WaitForSeconds(2f);
+        ReturnToMenu();
     }
 
     // === İSYAN SONU ===
@@ -404,13 +409,11 @@ public class FinalScene : MonoBehaviour
         yield return TypeText("Müdür: \"Sen... ne yaptın?!\"");
         yield return new WaitForSeconds(1.5f);
 
-        yield return TypeText("Müdür: \"KOVILDIN!\"");
+        yield return TypeText("Müdür: \"KOVULDUN!\"");
         yield return new WaitForSeconds(2f);
 
-        // POST-PROCESSING SIFIRLANIR — anomaliler biter
-        // (Burayı PostProcessAnomaly'de bir ResetAll metodu ile yapacağız)
+        // Efektler sıfırlanır
         ResetAllEffects();
-
         yield return new WaitForSeconds(1f);
 
         // Özgürlük müziği
@@ -421,18 +424,89 @@ public class FinalScene : MonoBehaviour
             src.volume = freedomMusicVol; src.Play();
         }
 
-        dialogueText.text = "";
-        yield return new WaitForSeconds(1f);
+        dialogueText.gameObject.SetActive(false);
 
         // Fade to white (özgürlük)
-        yield return FadeToWhite(3f);
+        yield return FadeToWhite(2f);
 
+        // === SINEMATİK YAZI DİZİSİ ===
+        panelObj.SetActive(true);
+        contractPanel.SetActive(false);
+        dialogueText.gameObject.SetActive(false);
         endingText.gameObject.SetActive(true);
-        endingText.color = new Color(0.2f, 0.2f, 0.2f);
-        endingText.text = "<size=24>\"Bazı kafesler içeriden açılır.\"</size>";
-        yield return new WaitForSeconds(5f);
+        endingText.transform.SetAsLastSibling(); // fade overlay'ın üstünde göster
 
-        endingText.text = "<size=18>Oyun bitti.</size>";
+        yield return ShowEndingSlide("Sözleşmeyi yırttın.", new Color(0.2f, 0.2f, 0.2f), 3f);
+        yield return ShowEndingSlide("Müdürün yüzü kıpkırmızı oldu.", new Color(0.3f, 0.3f, 0.3f), 3f);
+        yield return ShowEndingSlide("\"KOVULDUN!\"", new Color(0.6f, 0.1f, 0.1f), 2.5f);
+        yield return ShowEndingSlide("...", new Color(0.3f, 0.3f, 0.3f), 2f);
+        SFXManager.Play2D(doorSound, doorSoundVol);
+        yield return ShowEndingSlide("*kapı açılma sesi*", new Color(0.4f, 0.4f, 0.4f), 3f);
+        yield return ShowEndingSlide("Güneş yüzüne vurdu.\nNe kadar zamandır dışarı çıkmamıştın?", new Color(0.2f, 0.2f, 0.2f), 4.5f);
+        yield return ShowEndingSlide("Bilmiyorsun.", new Color(0.3f, 0.3f, 0.3f), 2.5f);
+        yield return ShowEndingSlide("Ama artık özgürsün.", new Color(0.1f, 0.1f, 0.1f), 3.5f);
+        yield return ShowEndingSlide("", Color.white, 2f);
+
+        // Fade overlay'i beyazdan siyaha çevir
+        fadeOverlay.color = new Color(0f, 0f, 0f, 1f);
+
+        yield return ShowEndingSlide(
+            "\"Bazı kafesler içeriden açılır.\"",
+            Color.white, 5f);
+
+        yield return ShowEndingSlide("SON", Color.white, 3f);
+        yield return ShowEndingSlide("Rutini kırdın.", new Color(0.7f, 0.7f, 0.7f), 4f);
+
+        // Menüye dön
+        yield return new WaitForSeconds(2f);
+        ReturnToMenu();
+    }
+
+    /// <summary>
+    /// Tek bir slide gösterir: fade in → bekle → fade out
+    /// </summary>
+    private IEnumerator ShowEndingSlide(string text, Color color, float duration)
+    {
+        endingText.text = text;
+        endingText.color = new Color(color.r, color.g, color.b, 0f);
+
+        // Fade in (0.6 sn)
+        float fadeIn = 0.6f;
+        float t = 0f;
+        while (t < fadeIn)
+        {
+            t += Time.deltaTime;
+            float a = t / fadeIn;
+            endingText.color = new Color(color.r, color.g, color.b, a);
+            yield return null;
+        }
+        endingText.color = color;
+
+        // Bekle
+        yield return new WaitForSeconds(duration);
+
+        // Fade out (0.4 sn)
+        float fadeOutDur = 0.4f;
+        t = 0f;
+        while (t < fadeOutDur)
+        {
+            t += Time.deltaTime;
+            float a = 1f - (t / fadeOutDur);
+            endingText.color = new Color(color.r, color.g, color.b, a);
+            yield return null;
+        }
+        endingText.color = new Color(color.r, color.g, color.b, 0f);
+
+        yield return new WaitForSeconds(0.3f);
+    }
+
+    private void ReturnToMenu()
+    {
+        // Menü sahnesine dön
+        if (UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings > 1)
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(0); // index 0 = Menü
+        }
     }
 
     private void ResetAllEffects()

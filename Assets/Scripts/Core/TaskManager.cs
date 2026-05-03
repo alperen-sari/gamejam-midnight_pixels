@@ -54,23 +54,19 @@ public class TaskManager : MonoBehaviour
             case 1:
                 AddTask("kahve_al", "Kahve Al", "Kahve makinesinden kahve al.", TaskType.Routine);
                 AddTask("mail_oku", "Mailleri Kontrol Et", "Bilgisayarında mailleri oku.", TaskType.Routine);
-                AddTask("evrak_teslim", "Evrakları Teslim Et", "Yazıcıdan evrakları al ve patrona götür.", TaskType.Routine);
-                AddTask("rapor_yaz", "Rapor Yaz", "Masanda günlük raporu tamamla.", TaskType.Routine);
-                AddTask("toplanti", "Toplantıya Katıl", "Saat 15:00 toplantısına git.", TaskType.Routine);
+                AddTask("evrak_teslim", "Evrakları Teslim Et", "Yazıcıdan evrakları al ve teslim et.", TaskType.Routine);
                 break;
 
             case 2:
                 AddTask("kahve_al", "Kahve Al", "Kahve makinesinden kahve al... ya da alma?", TaskType.Routine);
                 AddTask("mail_oku", "Mailleri Kontrol Et", "Bilgisayarında mailleri oku. Garip bir mail var.", TaskType.Routine);
                 AddTask("evrak_teslim", "Evrakları Teslim Et", "Yazıcıdan evrakları al. Ama nereye götüreceksin?", TaskType.Routine);
-                AddTask("rapor_yaz", "Rapor Yaz", "Aynı rapor. Yine. Tekrar.", TaskType.Routine);
-                AddTask("gizli_oda", "???", "Koridorun sonundaki kapı açık...", TaskType.Rebellion, true);
                 break;
 
             case 3:
-                AddTask("kahve_al", "K̷a̷h̷v̷e̷ Al", "Makine sana bakıyor.", TaskType.Routine);
+                AddTask("kahve_al", "Kahve Al", "Makine sana bakıyor.", TaskType.Routine);
                 AddTask("mail_oku", "Son Mail", "Sadece bir mail var. Senden.", TaskType.Routine);
-                AddTask("karar", "Karar Ver", "Kapıdan çık ya da masana otur.", TaskType.Rebellion);
+                AddTask("evrak_teslim", "Son Evrak", "Son kez.", TaskType.Routine);
                 break;
         }
 

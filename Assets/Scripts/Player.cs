@@ -53,6 +53,13 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        // ESC = menuye don
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+            return;
+        }
+
         if (!canMove) 
         {
             moveInput = Vector2.zero;

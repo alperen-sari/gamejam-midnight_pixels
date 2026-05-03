@@ -53,32 +53,39 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
 
         if (DialogueSystem.Instance == null)
         {
-            Debug.LogWarning("[CoworkerDesk] DialogueSystem bulunamadı!");
+            Debug.LogWarning("[CoworkerDesk] DialogueSystem bulunamadi!");
             return;
         }
 
-        // Durum kontrolü: oyuncu kahveyi içmiş mi?
-        bool drankCoffee = !player.HasItem(requiredItem) && !isDelivered;
-        bool hasCoffee = player.HasItem(requiredItem);
+        // Zaten tepki verdiyse tekrar konusma
+        if (hasReacted || isDelivered)
+        {
+            return;
+        }
 
-        // CoffeeMaker kullanılmış mı kontrol et (sahne üzerinden)
-        CoffeeMaker coffeeMaker = FindFirstObjectByType<CoffeeMaker>();
-        bool coffeeMachineUsed = coffeeMaker != null && !coffeeMaker.CanInteract();
+        bool hasCoffee = player.HasItem(requiredItem);
 
         if (hasCoffee)
         {
-            // Oyuncu kahveyi getirmiş → teslim menüsü
+            // Oyuncu kahveyi getirmis
             HandleCoffeeDelivery(player);
-        }
-        else if (coffeeMachineUsed && !isDelivered)
-        {
-            // Kahve makinesi kullanılmış ama elde kahve yok → içmiş!
-            HandleCoffeeDrunk(player);
         }
         else
         {
-            // Henüz kahve almamış → iste
-            HandleAskForCoffee(player);
+            // Kahve makinesi kullanilmis mi?
+            CoffeeMaker coffeeMaker = FindFirstObjectByType<CoffeeMaker>();
+            bool coffeeMachineUsed = coffeeMaker != null && !coffeeMaker.CanInteract();
+
+            if (coffeeMachineUsed)
+            {
+                // Makine kullanildi ama elde kahve yok = icmis
+                HandleCoffeeDrunk(player);
+            }
+            else
+            {
+                // Henuz kahve almamis
+                HandleAskForCoffee(player);
+            }
         }
     }
 
@@ -260,12 +267,16 @@ public class CoworkerDesk : MonoBehaviour, IInteractable
 
         DialogueSystem.Instance.StartDialogue(lines, () =>
         {
-            taskCompleted = true;  // Artık tekrar konuşulamaz
+            taskCompleted = true;  // Artik tekrar konusulamaz
+
+            if (TaskManager.Instance != null)
+            {
+                TaskManager.Instance.RebelTask(taskId, fractureDrinkAmount);
+            }
 
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.ReduceBossTrust(trustLossOnDrink);
-                GameManager.Instance.AddFracture(fractureDrinkAmount);
             }
         });
     }

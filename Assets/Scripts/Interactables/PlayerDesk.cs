@@ -30,32 +30,16 @@ public class PlayerDesk : MonoBehaviour, IInteractable
     {
         if (!CanInteract()) return;
 
-        if (AreAllTasksDone())
-        {
-            // Tüm görevler bitti → gün bitir seçeneği
-            ChoiceUI.Instance?.ShowChoices(
-                ("Günü Bitir", () => EndDay()),
-                ("Biraz Daha Kal", () => { })
-            );
-        }
-        else
-        {
-            // Henüz görevler bitmedi
-            DialogueSystem.Instance?.StartDialogue(new DialogueLine[]
-            {
-                new DialogueLine("", "Henüz yapılacak işlerim var..."),
-                new DialogueLine("", "Bitmeden gidemem.")
-            });
-        }
+        // Her zaman gunu bitir secenegi sun
+        ChoiceUI.Instance?.ShowChoices(
+            ("Gunu Bitir", () => EndDay()),
+            ("Biraz Daha Kal", () => { })
+        );
     }
 
     public string GetInteractionPrompt()
     {
-        if (AreAllTasksDone())
-        {
-            return "[E] Masana Otur (Günü Bitir)";
-        }
-        return "[E] Masana Otur";
+        return "[E] Gunu Bitir";
     }
 
     public bool CanInteract()
@@ -66,31 +50,17 @@ public class PlayerDesk : MonoBehaviour, IInteractable
     // ==================== Görev Kontrolü ====================
 
     /// <summary>
-    /// Sahnedeki tüm ana görevlerin bitip bitmediğini kontrol eder.
-    /// Her interactable'ın CanInteract() == false olması = görev tamam.
+    /// TaskManager'daki tüm görevlerin bitip bitmediğini kontrol eder.
     /// </summary>
     private bool AreAllTasksDone()
     {
-        // Kahve makinesi kullanıldı mı?
-        CoffeeMaker coffee = FindFirstObjectByType<CoffeeMaker>();
-        if (coffee != null && coffee.CanInteract()) return false;
+        if (TaskManager.Instance == null) return true;
 
-        // Kahve teslim/tepki verildi mi?
-        CoworkerDesk coworker = FindFirstObjectByType<CoworkerDesk>();
-        if (coworker != null && coworker.CanInteract()) return false;
-
-        // Yazıcı kullanıldı mı?
-        Printer printer = FindFirstObjectByType<Printer>();
-        if (printer != null && printer.CanInteract()) return false;
-
-        // Evrak teslim/tepki verildi mi?
-        DocumentDesk docDesk = FindFirstObjectByType<DocumentDesk>();
-        if (docDesk != null && docDesk.CanInteract()) return false;
-
-        // Bilgisayar (rapor + mail) tamamlandı mı?
-        Computer computer = FindFirstObjectByType<Computer>();
-        if (computer != null && computer.CanInteract()) return false;
-
+        foreach (var task in TaskManager.Instance.CurrentTasks)
+        {
+            if (!task.IsCompleted && !task.IsHidden)
+                return false;
+        }
         return true;
     }
 

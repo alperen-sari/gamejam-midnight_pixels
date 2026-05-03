@@ -28,26 +28,45 @@ public class Printer : MonoBehaviour, IInteractable
     {
         if (!CanInteract()) return;
 
+        // Yazıcı sesi çal
+        SFXManager.Play(printSound, transform.position, printSoundVol);
+
+        // Mini-game varsa oyna, yoksa direkt ver
+        if (PrinterMiniGame.Instance != null)
+        {
+            PrinterMiniGame.Instance.StartGame((success) =>
+            {
+                FinishPrint(player, success);
+            });
+        }
+        else
+        {
+            FinishPrint(player, true);
+        }
+    }
+
+    private void FinishPrint(Player player, bool success)
+    {
         isUsed = true;
-        player.AddItem(itemId);
 
         // İkonu gizle
         HeadIcon icon = GetComponent<HeadIcon>();
         if (icon != null) icon.OnInteracted();
 
-        // Yazıcı sesi çal
-        SFXManager.Play(printSound, transform.position, printSoundVol);
+        player.AddItem(itemId);
 
         Debug.Log("[Printer] Evrak alındı.");
 
-        // Kısa diyalog
-        if (DialogueSystem.Instance != null)
+        // Diyalog
+        int day = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
+        string msg = day >= 3
+            ? "*çırr... çırr...* Kağıtta garip şeyler yazıyor..."
+            : "*çırr çırr* Evrak hazır.";
+
+        DialogueSystem.Instance?.StartDialogue(new DialogueLine[]
         {
-            DialogueSystem.Instance.StartDialogue(new DialogueLine[]
-            {
-                new DialogueLine("Yazıcı", "*çırr çırr* Evrak hazır.")
-            });
-        }
+            new DialogueLine("Yazıcı", msg)
+        });
     }
 
     public string GetInteractionPrompt()

@@ -96,9 +96,23 @@ public class PlayerDesk : MonoBehaviour, IInteractable
 
     // ==================== Gün Geçişi ====================
 
+    [Header("Boss Room (Gün 3 Sonu)")]
+    [SerializeField] private Transform bossRoomSpawnPoint;  // Müdür odası spawn noktası
+
     private void EndDay()
     {
-        StartCoroutine(DayTransitionRoutine());
+        int currentDay = GameManager.Instance != null ? GameManager.Instance.CurrentDay : 1;
+
+        if (currentDay >= 3)
+        {
+            // Gün 3 → Müdür odasına git
+            StartCoroutine(FinalDayRoutine());
+        }
+        else
+        {
+            // Normal gün geçişi
+            StartCoroutine(DayTransitionRoutine());
+        }
     }
 
     private System.Collections.IEnumerator DayTransitionRoutine()
@@ -130,6 +144,38 @@ public class PlayerDesk : MonoBehaviour, IInteractable
 
         // Oyuncuyu serbest bırak
         if (player != null) player.SetCanMove(true);
+    }
+
+    private System.Collections.IEnumerator FinalDayRoutine()
+    {
+        Player player = FindFirstObjectByType<Player>();
+        if (player != null) player.SetCanMove(false);
+
+        // Fade out
+        yield return StartCoroutine(Fade(0f, 1f, fadeDuration));
+
+        // "Müdür seni çağırıyor..." yazısı
+        dayText.text = "Müdür seni çağırıyor...";
+        dayText.gameObject.SetActive(true);
+
+        yield return new WaitForSeconds(dayTextDuration);
+
+        dayText.gameObject.SetActive(false);
+
+        // Oyuncuyu müdür odasına ışınla
+        if (player != null && bossRoomSpawnPoint != null)
+        {
+            player.transform.position = bossRoomSpawnPoint.position;
+        }
+
+        // Fade in
+        yield return StartCoroutine(Fade(1f, 0f, fadeDuration));
+
+        // Oyuncuyu serbest bırak — müdürle konuşsun
+        if (player != null) player.SetCanMove(true);
+
+        // Müdür NPC yoksa direkt final başlat
+        // (Müdür NPC varsa, onunla konuşunca FinalScene.Instance.StartFinal() çağrılır)
     }
 
     // ==================== Fade UI ====================

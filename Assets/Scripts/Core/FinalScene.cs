@@ -63,7 +63,7 @@ public class FinalScene : MonoBehaviour
     private bool isActive = false;
     private bool isObedient;
     private int dodgeCount = 0;
-    private int maxDodges = 3;  // Kaç kez kaçtıktan sonra dönüşür
+    private int maxDodges = 8;  // Kaç kez kaçtıktan sonra dönüşür
     private bool buttonsLocked = false;
 
     void Awake()
@@ -195,48 +195,12 @@ public class FinalScene : MonoBehaviour
         if (AmbientManager.Instance != null) AmbientManager.Instance.Duck(0f);
 
         panelObj.SetActive(true);
-        StartCoroutine(BossDialogue());
-    }
-
-    // ==================== Diyalog ====================
-
-    private IEnumerator BossDialogue()
-    {
-        string[] lines;
-
-        if (isObedient)
-        {
-            lines = new string[] {
-                "Müdür: \"Üç gündür seni izliyordum.\"",
-                "Müdür: \"Mükemmel bir çalışan... Tam istediğimiz gibi.\"",
-                "Müdür: \"Seni kalıcı kadroya alıyoruz.\"",
-                "Müdür: \"Tek yapman gereken... bu sözleşmeyi imzalamak.\""
-            };
-        }
-        else
-        {
-            lines = new string[] {
-                "Müdür: \"Üç gündür seni izliyordum.\"",
-                "Müdür: \"Kuralları çiğnedin. Düzeni bozdun.\"",
-                "Müdür: \"Ama sana bir şans daha veriyorum.\"",
-                "Müdür: \"İmzala... ya da sonuçlarına katlan.\""
-            };
-        }
-
-        foreach (string line in lines)
-        {
-            dialogueText.text = "";
-            foreach (char ch in line)
-            {
-                dialogueText.text += ch;
-                yield return new WaitForSeconds(0.04f);
-            }
-            yield return new WaitForSeconds(1.2f);
-        }
-
-        // Sözleşme göster
+        // BossNPC zaten diyaloğu gösterdi — direkt sözleşmeye geç
         ShowContract();
     }
+
+    // ==================== Sözleşme ====================
+    // (Diyalog BossNPC tarafından gösterildi, burası direkt sözleşme)
 
     // ==================== Sözleşme + Butonlar ====================
 
@@ -363,12 +327,14 @@ public class FinalScene : MonoBehaviour
 
         SFXManager.Play2D(tearSound, tearSoundVol);
         contractPanel.SetActive(false);
+        panelObj.SetActive(false);
 
-        // CrumpleMiniGame ile sözleşmeyi yırt
-        if (CrumpleMiniGame.Instance != null)
+        // TearMiniGame ile sözleşmeyi yırt (Stardew Valley fishing tarzı)
+        if (TearMiniGame.Instance != null)
         {
-            CrumpleMiniGame.Instance.StartGame((success) =>
+            TearMiniGame.Instance.StartGame((success) =>
             {
+                panelObj.SetActive(true);
                 StartCoroutine(RebelEnding());
             });
         }

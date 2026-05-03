@@ -37,14 +37,13 @@ public class DayManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Tüm görevler bittiğinde çağrılır. Gün geçişini başlatır.
+    /// Tüm görevler bittiğinde çağrılır.
+    /// NOT: Otomatik geçiş kapalı — PlayerDesk üzerinden yapılıyor.
     /// </summary>
     private void OnAllTasksDone()
     {
-        if (!isTransitioning)
-        {
-            StartDayTransition();
-        }
+        Debug.Log("[DayManager] Tüm görevler bitti. Masaya dön ve günü bitir.");
+        // PlayerDesk "Günü Bitir" seçeneği sunar, otomatik geçiş yok
     }
 
     /// <summary>
@@ -99,18 +98,19 @@ public class DayManager : MonoBehaviour
         Debug.Log($"[DayManager] Gün geçişi tamamlandı. Şu an: Gün {GameManager.Instance?.CurrentDay}");
     }
 
+    [Header("Spawn")]
+    [SerializeField] private Transform playerSpawnPoint;  // Inspector'dan ata
+
     private void ResetPlayerPosition()
     {
         Player player = FindFirstObjectByType<Player>();
-        if (player != null)
+        if (player == null) return;
+
+        if (playerSpawnPoint != null)
         {
-            // Ofisin giriş noktasına ışınla
-            Transform spawnPoint = GameObject.FindGameObjectWithTag("SpawnPoint")?.transform;
-            if (spawnPoint != null)
-            {
-                player.transform.position = spawnPoint.position;
-            }
+            player.transform.position = playerSpawnPoint.position;
         }
+        // SpawnPoint atanmamışsa oyuncu yerinde kalır
     }
 
     void OnDestroy()

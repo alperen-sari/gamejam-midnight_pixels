@@ -12,6 +12,9 @@ public class OfficeNPC : MonoBehaviour, IInteractable
     [Header("Dialogue Per Day")]
     [SerializeField] private NPCDayDialogue[] dayDialogues;
 
+    [Header("Görev Objeleri (Konuştuktan sonra ünlem çıkar)")]
+    [SerializeField] private GameObject[] taskTargetObjects;  // Kahve makinesi, yazıcı vs.
+
     [Header("Anomaly Behavior")]
     [SerializeField] private bool canWalkBackwards = true;
     [SerializeField] private bool canStareAtPlayer = true;
@@ -52,12 +55,31 @@ public class OfficeNPC : MonoBehaviour, IInteractable
         DialogueLine[] lines = GetCurrentDialogue();
         if (lines != null && lines.Length > 0)
         {
-            DialogueSystem.Instance?.StartDialogue(lines);
+            // Diyalog bitince görev objelerinde ünlem göster
+            DialogueSystem.Instance?.StartDialogue(lines, () =>
+            {
+                ShowTaskIcons();
+            });
             hasInteractedToday = true;
 
             // Kafadaki ünlemi gizle
             HeadIcon icon = GetComponent<HeadIcon>();
             if (icon != null) icon.OnInteracted();
+        }
+    }
+
+    /// <summary>
+    /// Diyalog bitince görev objelerindeki HeadIcon'ları açar.
+    /// </summary>
+    private void ShowTaskIcons()
+    {
+        if (taskTargetObjects == null) return;
+
+        foreach (GameObject obj in taskTargetObjects)
+        {
+            if (obj == null) continue;
+            HeadIcon icon = obj.GetComponent<HeadIcon>();
+            if (icon != null) icon.Show();
         }
     }
 

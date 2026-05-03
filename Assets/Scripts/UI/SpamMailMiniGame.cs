@@ -32,6 +32,10 @@ public class SpamMailMiniGame : MonoBehaviour
     [SerializeField] private Color headerBg = new Color(0.2f, 0.4f, 0.8f);
     [SerializeField] private Color anomalyHeaderBg = new Color(0.6f, 0.1f, 0.1f);
 
+    [Header("Sprites (Opsiyonel — boş bırakırsan default kullanılır)")]
+    [SerializeField] private Sprite popupSprite;        // Popup penceresi arka planı
+    [SerializeField] private Sprite closeButtonSprite;  // X (kapat) butonu sprite'ı
+
     private GameObject gameCanvas;
     private GameObject panelObj;
     private Image inboxBar;
@@ -226,7 +230,16 @@ public class SpamMailMiniGame : MonoBehaviour
 
         // Popup arka plan
         Image popBg = popup.AddComponent<Image>();
-        popBg.color = day >= 3 ? new Color(0.15f, 0.02f, 0.02f) : popupBg;
+        if (popupSprite != null)
+        {
+            popBg.sprite = popupSprite;
+            popBg.type = Image.Type.Sliced;
+            popBg.color = day >= 3 ? new Color(0.8f, 0.3f, 0.3f) : Color.white;
+        }
+        else
+        {
+            popBg.color = day >= 3 ? new Color(0.15f, 0.02f, 0.02f) : popupBg;
+        }
 
         // Header bar
         GameObject header = CreateRect(popup, "Header", new Vector2(0f, 0.7f), Vector2.one);
@@ -244,16 +257,28 @@ public class SpamMailMiniGame : MonoBehaviour
         // X butonu
         GameObject xBtn = CreateRect(header, "CloseBtn", new Vector2(0.82f, 0.1f), new Vector2(0.98f, 0.9f));
         Image xBg = xBtn.AddComponent<Image>();
-        xBg.color = new Color(0.8f, 0.2f, 0.2f);
+        if (closeButtonSprite != null)
+        {
+            xBg.sprite = closeButtonSprite;
+            xBg.color = Color.white;
+        }
+        else
+        {
+            xBg.color = new Color(0.8f, 0.2f, 0.2f);
+        }
         Button btn = xBtn.AddComponent<Button>();
 
-        TextMeshProUGUI xText = new GameObject("X").AddComponent<TextMeshProUGUI>();
-        xText.transform.SetParent(xBtn.transform, false);
-        xText.text = "✕"; xText.fontSize = 16; xText.color = Color.white;
-        xText.alignment = TextAlignmentOptions.Center;
-        RectTransform xTR = xText.GetComponent<RectTransform>();
-        xTR.anchorMin = Vector2.zero; xTR.anchorMax = Vector2.one;
-        xTR.offsetMin = Vector2.zero; xTR.offsetMax = Vector2.zero;
+        // X yazısı (sprite yoksa "✕" göster)
+        if (closeButtonSprite == null)
+        {
+            TextMeshProUGUI xText = new GameObject("X").AddComponent<TextMeshProUGUI>();
+            xText.transform.SetParent(xBtn.transform, false);
+            xText.text = "✕"; xText.fontSize = 16; xText.color = Color.white;
+            xText.alignment = TextAlignmentOptions.Center;
+            RectTransform xTR = xText.GetComponent<RectTransform>();
+            xTR.anchorMin = Vector2.zero; xTR.anchorMax = Vector2.one;
+            xTR.offsetMin = Vector2.zero; xTR.offsetMax = Vector2.zero;
+        }
 
         // Click event
         btn.onClick.AddListener(() => OnPopupClosed(popup, day));

@@ -155,7 +155,16 @@ public class Computer : MonoBehaviour, IInteractable
     {
         SFXManager.Play(mailOpenSound, transform.position, mailOpenSoundVol);
 
-        if (MailSystem.Instance != null)
+        // SpamMailMiniGame varsa onu kullan
+        if (SpamMailMiniGame.Instance != null)
+        {
+            SpamMailMiniGame.Instance.StartGame((success) =>
+            {
+                mailDone = true;
+                TaskManager.Instance?.CompleteTask(mailTaskId);
+            });
+        }
+        else if (MailSystem.Instance != null)
         {
             MailSystem.Instance.OpenMails(() =>
             {
@@ -165,7 +174,6 @@ public class Computer : MonoBehaviour, IInteractable
         }
         else
         {
-            // Fallback
             mailDone = true;
             DialogueSystem.Instance?.StartDialogue(new DialogueLine[]
             {

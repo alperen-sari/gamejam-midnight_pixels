@@ -31,6 +31,12 @@ public class ReportMiniGame : MonoBehaviour
     [SerializeField] private Color bgColor = new Color(0.04f, 0.06f, 0.04f, 0.97f);
     [SerializeField] private Color headerColor = new Color(0.1f, 0.2f, 0.1f);
 
+    [Header("Sound")]
+    [SerializeField] private AudioClip correctKeySound;      // Doğru tuş sesi
+    [SerializeField] [Range(0f, 1f)] private float correctKeyVol = 0.4f;
+    [SerializeField] private AudioClip wrongKeySound;        // Yanlış tuş sesi
+    [SerializeField] [Range(0f, 1f)] private float wrongKeyVol = 0.5f;
+
     // UI
     private GameObject gameCanvas;
     private GameObject panelObj;
@@ -445,6 +451,9 @@ public class ReportMiniGame : MonoBehaviour
     {
         keysPressed++;
 
+        // Ses
+        SFXManager.Play2D(correctKeySound, correctKeyVol);
+
         string[] words = isRebellionMode ? doodleWords : reportWords;
         int wordIndex = (keysPressed - 1) % words.Length;
         reportText.text += words[wordIndex] + " ";
@@ -459,6 +468,9 @@ public class ReportMiniGame : MonoBehaviour
     private void OnWrongKey()
     {
         errors++;
+
+        // Ses
+        SFXManager.Play2D(wrongKeySound, wrongKeyVol);
 
         feedbackText.text = $"✗ Yanlış! ({errors}/{maxErrors})";
         feedbackText.color = wrongColor;

@@ -54,6 +54,10 @@ public class OfficeNPC : MonoBehaviour, IInteractable
         {
             DialogueSystem.Instance?.StartDialogue(lines);
             hasInteractedToday = true;
+
+            // Kafadaki ünlemi gizle
+            HeadIcon icon = GetComponent<HeadIcon>();
+            if (icon != null) icon.OnInteracted();
         }
     }
 
